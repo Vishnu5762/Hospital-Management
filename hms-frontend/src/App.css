@@ -1,0 +1,70 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+/* src/index.css */
+
+body, html, #root {
+    /* Ensure the background covers the full viewport */
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    /* 1. Define the soft, radial gradient for the 'shine' effect */
+    /* This creates a light gradient that simulates a center light source */
+    background: radial-gradient(
+        circle at 50% 0, /* Start the light source at the top center */
+        #ffffff 1%,      /* White core for the brightest shine */
+        #f8f8f8 40%,      /* Soft off-white transition */
+        #f0f2f5 100%       /* Slightly darker color at the edges (your card background color) */
+    );
+    background-attachment: fixed; /* Prevents the gradient from scrolling with content */
+}body {
+    /* New: Neutral, warm gradient for a soft, premium background effect */
+    background: radial-gradient(
+        circle at 50% 0, 
+        #FFFFFF 5%,      /* White core for the brightest light source */
+        #FFFFFC 40%,      /* Very light cream/off-white transition */
+        #F0F0F0 100%       /* Soft gray border color (neutral look) */
+    );
+    background-attachment: fixed;
+    /* Optional: Ensure text remains black/dark gray for readability */
+    color: #333; 
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

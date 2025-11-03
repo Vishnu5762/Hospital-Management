@@ -1,0 +1,26 @@
+/* src/pages/BookAppointment.css */
+
+/* 1. Main container for the form section (ensures centered content) */
+.booking-page-container {
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center horizontally */
+    width: 100%;
+}
+
+/* 2. Container for the form itself */
+.booking-form-wrapper {
+    width: 100%;
+    max-width: 450px; /* Constrain the form width */
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Gives a nice lift */
+}
+
+/* 3. Ensure the date input field respects the full width */
+/* We must target the standard HTML input type used by MUI internally */
+.MuiInputBase-input[type="datetime-local"] {
+    width: 100%;
+}

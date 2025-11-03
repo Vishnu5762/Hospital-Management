@@ -1,0 +1,20 @@
+/* src/components/Header.css */
+
+/* Global container for header. Can use this to adjust size/shadow if needed. */
+.hms-header {
+    /* MUI handles most styling, use CSS here for custom layout adjustments */
+}
+
+/* Style for the logo/brand link to remove default text decoration */
+.hms-brand {
+    text-decoration: none !important;
+    color: inherit;
+    display: flex; /* Aligns the icon and text */
+    align-items: center;
+}
+
+/* Style for the user info text */
+.hms-user-info {
+    margin-right: 16px; /* Standard MUI spacing (equivalent to sx={{ mr: 2 }}) */
+    white-space: nowrap; /* Prevents wrapping on small screens */
+}

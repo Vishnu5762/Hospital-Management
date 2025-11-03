@@ -1,0 +1,23 @@
+/* src/pages/Dashboard.css */
+
+/* Main content wrapper padding and background */
+.dashboard-content-wrapper {
+    padding-top: 20px;
+    min-height: calc(100vh - 64px); /* Full height minus header height */
+}
+
+/* Style for individual feature cards */
+.feature-card {
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Status alerts/banners */
+.status-alert {
+    margin-bottom: 20px;
+}

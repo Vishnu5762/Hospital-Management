@@ -1,0 +1,24 @@
+/* src/pages/Login.css */
+
+/* Center the container */
+.login-page-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 90vh; /* Takes up most of the viewport height */
+    background-color: #f4f6f8; /* Light background for the page */
+}
+
+/* Override or add spacing around the form card */
+.login-card {
+    padding: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the button container for spacing */
+.login-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Spacing between form elements */
+    margin-top: 15px;
+}
