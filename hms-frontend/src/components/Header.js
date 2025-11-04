@@ -1,50 +1,36 @@
 // src/components/Header.js
 
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { 
+    AppBar, Toolbar, Typography, Button, Box, IconButton, 
+    Drawer, List, ListItem, ListItemButton, ListItemText 
+} from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import MenuIcon from '@mui/icons-material/Menu'; // Hamburger icon
 import { useAuth } from '../context/AuthContext';
 import './Header.css'; 
 
-// --- NEW HELPER FUNCTION FOR ROLE-SPECIFIC LINKS ---
-const RoleNavigation = ({ role }) => {
-    if (!role) return null;
-    
-    // Define links based on role
+// --- Helper function to define all navigation links based on role ---
+const getRoleLinks = (role) => {
     let links = [];
 
     if (role === 'ROLE_DOCTOR' || role === 'ROLE_ADMIN') {
         links = [
-            // FIX: Direct Doctor's 'Schedule' button to their integrated dashboard view
-            { title: 'Appointments', path: '/appointments/list' }, // <-- CORRECTED PATH
-            
-            // Patient Records list view remains here
-            { title: 'Patient Records', path: '/records/list' } 
+            // Doctor uses dashboard as schedule hub
+            { title: 'Appointments', path: '/doctor/dashboard' }, 
+            { title: 'Patient Records', path: '/records/list' }
         ];
     } else if (role === 'ROLE_PATIENT') {
         links = [
             { title: 'My Appointments', path: '/appointments/list' },
             { title: 'Book Appointment', path: '/appointments/book' },
-            { title: 'My Records', path: '/records/list' } 
+            { title: 'My Records', path: '/records/list' }
         ];
     }
-
-    return (
-        <Box sx={{ ml: 4, display: 'flex', gap: 2 }}>
-            {links.map((link) => (
-                <Button 
-                    key={link.title}
-                    color="inherit" 
-                    component={Link} 
-                    to={link.path}
-                    sx={{ textTransform: 'none', border: '1px solid rgba(255,255,255,0.5)' }} // Simple styling
-                >
-                    {link.title}
-                </Button>
-            ))}
-        </Box>
-    );
+    return links;
 };
 // ---------------------------------------------------
 
@@ -52,7 +38,14 @@ const RoleNavigation = ({ role }) => {
 const Header = () => {
     const { user, role, logout } = useAuth();
     const navigate = useNavigate();
-    // ... handleLogout and getDashboardPath methods ...
+    
+    // State for managing the mobile drawer visibility
+    const [drawerOpen, setDrawerOpen] = useState(false); 
+    
+    // Hooks to detect screen size
+    const theme = useTheme();
+    // isMobile is true for screen sizes smaller than the 'md' breakpoint
+    const isMobile = useMediaQuery(theme.breakpoints.down('md')); 
 
     const handleLogout = () => {
         logout();
@@ -64,6 +57,54 @@ const Header = () => {
         return `/${userRole.split('_')[1].toLowerCase()}/dashboard`;
     };
 
+    // Get the links array based on the current role
+    const links = getRoleLinks(role);
+
+
+    // --- Drawer Content (Used for Mobile) ---
+    const DrawerList = (
+        <Box sx={{ width: 250 }} role="presentation" onClick={() => setDrawerOpen(false)}>
+            <List>
+                {/* Links for the main modules */}
+                {links.map((link) => (
+                    <ListItem key={link.title} disablePadding>
+                        <ListItemButton component={Link} to={link.path}>
+                            <ListItemText primary={link.title} />
+                        </ListItemButton>
+                    </ListItem>
+                ))}
+            </List>
+            <Box sx={{ p: 2, borderTop: '1px solid #ccc' }}>
+                <Button fullWidth onClick={handleLogout} variant="contained" color="error">
+                    LOGOUT
+                </Button>
+            </Box>
+        </Box>
+    );
+
+    
+    // --- Desktop Navigation (Inline Buttons) ---
+    const DesktopNavigation = (
+        <Box sx={{ display: 'flex', gap: 2 }}>
+            {links.map((link) => (
+                <Button 
+                    key={link.title}
+                    color="inherit" 
+                    component={Link} 
+                    to={link.path}
+                    sx={{ 
+                        textTransform: 'none', 
+                        border: '1px solid rgba(255,255,255,0.5)', 
+                        minWidth: 120 
+                    }}
+                >
+                    {link.title}
+                </Button>
+            ))}
+        </Box>
+    );
+
+
     return (
         <AppBar position="static" className="hms-header">
             <Toolbar>
@@ -71,37 +112,58 @@ const Header = () => {
                 {/* 1. Brand/Logo Link */}
                 <Typography variant="h6" component={Link} 
                     to={getDashboardPath(role)} 
-                    className="hms-brand" 
                     sx={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}
                 > 
                     <LocalHospitalIcon sx={{ mr: 1 }} />
                     HMS | {role ? role.split('_')[1] : 'Guest'}
                 </Typography>
                 
-                {/* 2. Role-Based Navigation Links (NEW LOCATION) */}
-                <RoleNavigation role={role} />
-
-                {/* --- Spacer to push user info to the right --- */}
-                <Box sx={{ flexGrow: 1 }} /> 
+                {/* --- SPACER AND NAVIGATION --- */}
                 
-                {/* 3. User Info and Logout */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {user ? (
-                        <>
-                            <Typography variant="body1" component="span" sx={{ mr: 2 }}>
-                                Welcome, {user.name}
-                            </Typography>
+                {user && (
+                    <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        
+                        {/* Desktop Navigation Links */}
+                        {!isMobile && DesktopNavigation}
+                        
+                        {/* User Welcome Message */}
+                        <Typography variant="body1" component="span" sx={{ mr: 2, ml: 4 }}>
+                            Welcome, {user?.name || user?.username}
+                        </Typography>
+
+                        {/* Logout Button (Desktop) */}
+                        {!isMobile && (
                             <Button color="inherit" onClick={handleLogout} variant="outlined">
                                 LOGOUT
                             </Button>
-                        </>
-                    ) : (
-                        <Button color="inherit" component={Link} to="/">
-                            Login
-                        </Button>
-                    )}
-                </Box>
+                        )}
+                        
+                        {/* 2. Mobile Hamburger Menu (Only visible on small screens) */}
+                        {isMobile && (
+                            <IconButton
+                                color="inherit"
+                                edge="end"
+                                onClick={() => setDrawerOpen(true)}
+                                sx={{ ml: 1 }}
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                        )}
+                    </Box>
+                )}
+                
+                {/* Fallback for Guest user */}
+                {!user && (
+                    <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button color="inherit" component={Link} to="/">Login</Button>
+                    </Box>
+                )}
             </Toolbar>
+
+            {/* 3. Drawer Component (Always defined, only opens on mobile click) */}
+            <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+                {DrawerList}
+            </Drawer>
         </AppBar>
     );
 };
