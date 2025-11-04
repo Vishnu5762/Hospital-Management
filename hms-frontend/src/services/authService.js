@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 // API_URL is relative; the proxy handles forwarding to http://localhost:8080/api/auth/
-const API_URL = "/api/auth/"; 
+const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com";
+const API_URL = BASE_DOMAIN+ "/api/auth/"; 
 
 const login = async (username, password) => {
     // 1. Post credentials to the backend
