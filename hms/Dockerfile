@@ -18,7 +18,7 @@ RUN mvn clean install -DskipTests
 
 # Stage 2: Create the Final Production Image
 # Use a smaller, security-hardened JRE (Java Runtime Environment) for the final image
-FROM eclipse-temurin:17-jre-focal AS production
+FROM eclipse-temurin:21-jre-focal AS production
 
 # Set the working directory in the final image
 WORKDIR /usr/app
