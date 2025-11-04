@@ -1,7 +1,7 @@
 
 import axios from 'axios';
-
-const API_URL = "/api/appointments"; 
+const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com";
+const API_URL = BASE_DOMAIN +  "/api/appointments";
 
 const getMyAppointments = async (startDate, endDate) => {
     const params = {};
