@@ -1,9 +1,13 @@
 # Stage 1: Build the Application
-# Use the JDK 21 base image on the JAMMY distribution (standard for Temurin 21)
 FROM eclipse-temurin:21-jdk-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
+
+# --- CRITICAL FIX: Install Maven ---
+# Update package list and install maven
+RUN apt-get update && apt-get install -y maven 
+# -----------------------------------
 
 # Copy the Maven project file and download dependencies
 COPY pom.xml .
@@ -15,20 +19,17 @@ COPY src ./src
 # Package the application into a single executable JAR file
 RUN mvn clean install -DskipTests
 
-# Stage 2: Create the Final Production Image
-# Use the lighter JRE 21 image on the JAMMY distribution
+# Stage 2: Create the Final Production Image (JRE only)
 FROM eclipse-temurin:21-jre-jammy AS production
 
 # Set the working directory in the final image
 WORKDIR /usr/app
 
-# Argument to define the name of the built JAR file
 ARG JAR_FILE=target/*.jar
 
 # Copy the executable JAR from the builder stage
 COPY --from=builder /app/${JAR_FILE} app.jar
 
-# Define the port the application will listen on
 ENV PORT 8092
 
 # The entrypoint command to run the application
