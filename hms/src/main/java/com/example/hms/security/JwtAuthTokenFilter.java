@@ -62,7 +62,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            // Log the exception, but allow the filter chain to continue for Spring Security to handle the 401 response.
+            // FIX: Pass the exception object 'e' correctly to the logger
             logger.error("Error setting user authentication:", e);
         }
 
