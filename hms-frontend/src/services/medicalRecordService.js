@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com";
-const API_URL = BASE_DOMAIN =+"/api/records"; 
+const API_URL = BASE_DOMAIN +"/api/records"; 
 
 // 1. Create a new medical record (POST /api/records)
 const createRecord = async (recordData) => {
