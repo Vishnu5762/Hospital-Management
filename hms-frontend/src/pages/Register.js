@@ -37,7 +37,7 @@ const Register = () => {
         
         try {
             // 2. Submit to Backend
-            await axios.post("/register", payload);
+            await axios.post("api/auth/register", payload);
             
             setMessage("Registration successful! You can now log in.");
             
