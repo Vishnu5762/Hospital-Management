@@ -1,6 +1,5 @@
 package com.example.hms.security;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,49 +18,62 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity // Enables @PreAuthorize on service/controller methods
 public class WebSecurityConfig {
 
- @Autowired private UserDetailsServiceImpl userDetailsService;
- @Autowired private JwtAuthTokenFilter jwtAuthTokenFilter; // The filter we just created
+    @Autowired 
+    private UserDetailsServiceImpl userDetailsService;
+    
+    @Autowired 
+    private JwtAuthTokenFilter jwtAuthTokenFilter;
 
- @Bean // Required to ensure the filter can be autowired in the config
- public JwtAuthTokenFilter authenticationJwtTokenFilter() {
-     return new JwtAuthTokenFilter();
- }
+    // Required to ensure the filter can be autowired in the config
+    @Bean
+    public JwtAuthTokenFilter authenticationJwtTokenFilter() {
+        return new JwtAuthTokenFilter();
+    }
 
- @Bean
- public PasswordEncoder passwordEncoder() {
-     return new BCryptPasswordEncoder();
- }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
- @Bean
- public DaoAuthenticationProvider authenticationProvider() {
-     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-     authProvider.setUserDetailsService(userDetailsService);
-     authProvider.setPasswordEncoder(passwordEncoder());
-     return authProvider;
- }
+    // Defines how to authenticate users (using our UserDetailsService and BCrypt)
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
- @Bean
- public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-     return authConfig.getAuthenticationManager();
- }
+    // Exposes the AuthenticationManager bean for use in the AuthController (login)
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
 
-//src/main/java/com/hms/hms_project/security/WebSecurityConfig.java
+    // Defines the security filter chain rules
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http.csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
+            // Set session management to stateless (Crucial for JWT)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            
+            // Define Authorization Rules
+            .authorizeHttpRequests(auth -> auth
+                // Allow public access to all authentication/reset endpoints
+                .requestMatchers("/api/auth/**").permitAll() 
+                // Require authentication for all other requests
+                .anyRequest().authenticated()
+            );
 
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-  http.csrf(AbstractHttpConfigurer::disable) // <--- CRITICAL: Disables CSRF for REST APIs
-      .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      .authorizeHttpRequests(auth -> auth
-          .requestMatchers("/api/auth/**").permitAll() // Must be accessible
-          .anyRequest().authenticated()
-      );
+        // Configure the Authentication Provider
+        http.authenticationProvider(authenticationProvider());
+        
+        // Add the custom JWT validation filter BEFORE the standard Spring filter
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
-  http.authenticationProvider(authenticationProvider());
-  http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-
-  return http.build();
-}
+        return http.build();
+    }
 }
