@@ -1,4 +1,3 @@
-// src/main/java/com/hms/hms_project/security/UserDetailsImpl.java
 package com.example.hms.security;
 
 import com.example.hms.model.User;
@@ -21,18 +20,66 @@ public class UserDetailsImpl implements UserDetails {
         this.authority = authority;
     }
 
+    /**
+     * Factory method to construct UserDetailsImpl from the User entity.
+     */
     public static UserDetailsImpl build(User user) {
+        // The role enum name (e.g., "ROLE_DOCTOR") is converted to a Spring Security authority.
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().name());
         return new UserDetailsImpl(user.getId(), user.getUsername(), user.getPassword(), authority);
     }
     
-    // Custom Getters for access in AuthController
-    public Long getId() { return id; }
-    public String getRole() { return authority.getAuthority(); }
+    // --- Custom Getters (Used by AuthController and JWT Filter) ---
+    public Long getId() { 
+        return id; 
+    }
+    
+    /**
+     * Returns the role string (e.g., "ROLE_DOCTOR").
+     */
+    public String getRole() { 
+        return authority.getAuthority(); 
+    }
 
-    // Required UserDetails methods (Getters are the most important for now)
-    @Override public Collection<? extends GrantedAuthority> getAuthorities() { return List.of(authority); }
-    @Override public String getPassword() { return password; }
-    @Override public String getUsername() { return username; }
-    // Omitted: isAccountNonExpired, isAccountNonLocked, etc.
+    // =========================================================
+    // REQUIRED METHODS FROM UserDetails INTERFACE
+    // =========================================================
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() { 
+        return List.of(authority); 
+    }
+    
+    @Override
+    public String getPassword() { 
+        return password; 
+    }
+    
+    @Override
+    public String getUsername() { 
+        return username; 
+    }
+    
+    /**
+     * Standard implementation: account is always enabled/non-expired for simplicity.
+     */
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }
