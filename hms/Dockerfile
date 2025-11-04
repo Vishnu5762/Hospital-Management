@@ -1,6 +1,6 @@
 # Stage 1: Build the Application
-# Use a Java Development Kit (JDK) base image for compilation
-FROM eclipse-temurin:21-jdk-focal AS builder
+# Use the JDK 21 base image on the JAMMY distribution (standard for Temurin 21)
+FROM eclipse-temurin:21-jdk-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -13,12 +13,11 @@ RUN mvn dependency:go-offline
 COPY src ./src
 
 # Package the application into a single executable JAR file
-# The -DskipTests ensures the build doesn't fail on unit test issues during deployment
 RUN mvn clean install -DskipTests
 
 # Stage 2: Create the Final Production Image
-# Use a smaller, security-hardened JRE (Java Runtime Environment) for the final image
-FROM eclipse-temurin:21-jre-focal AS production
+# Use the lighter JRE 21 image on the JAMMY distribution
+FROM eclipse-temurin:21-jre-jammy AS production
 
 # Set the working directory in the final image
 WORKDIR /usr/app
@@ -29,9 +28,8 @@ ARG JAR_FILE=target/*.jar
 # Copy the executable JAR from the builder stage
 COPY --from=builder /app/${JAR_FILE} app.jar
 
-# Define an environment variable for the port Render will use
+# Define the port the application will listen on
 ENV PORT 8092
 
 # The entrypoint command to run the application
-# When Render runs this, it will be exposed on the public internet.
 ENTRYPOINT ["java", "-jar", "app.jar"]
