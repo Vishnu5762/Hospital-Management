@@ -92,57 +92,61 @@ public class AppointmentService {
      * If the user is a DOCTOR, it fetches TODAY's schedule by default when no filters are sent.
      */
     public List<AppointmentDto> getAppointmentsForCurrentUser(LocalDate startDate, LocalDate endDate) {
-        RoleName role = securityHelper.getCurrentUserRole();
-        Long currentUserId = securityHelper.getCurrentUserId();
+    RoleName role = securityHelper.getCurrentUserRole();
+    Long currentUserId = securityHelper.getCurrentUserId();
+    
+    // Check if filtering is active (at least one valid date object is present)
+    boolean isFilteringActive = (startDate != null || endDate != null);
+    
+    List<Appointment> appointments;
+    
+    // Define date boundaries, defaulting to the widest possible range only if filtering is active
+    LocalDateTime startDateTime = isFilteringActive && startDate != null ? startDate.atStartOfDay() : LocalDateTime.MIN;
+    LocalDateTime endDateTime = isFilteringActive && endDate != null ? endDate.atTime(LocalTime.MAX) : LocalDateTime.MAX;
+    
+    
+    // --- Doctor Role Logic ---
+    if (role == RoleName.ROLE_DOCTOR) {
+        Doctor doctor = doctorRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new EntityNotFoundException("Doctor profile missing."));
         
-        // Determine if the request is a simple unfettered fetch (no date filtering)
-        boolean isFilteringByDate = (startDate != null || endDate != null);
-        
-        List<Appointment> appointments;
-        
-        if (role == RoleName.ROLE_ADMIN) {
-            if (isFilteringByDate) {
-                 LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : LocalDateTime.MIN;
-                 LocalDateTime endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : LocalDateTime.MAX;
-                 appointments = appointmentRepository.findByAppointmentTimeBetween(startDateTime, endDateTime);
-            } else {
-                 appointments = appointmentRepository.findAll();
-            }
-        } else if (role == RoleName.ROLE_DOCTOR) {
-            Doctor doctor = doctorRepository.findByUserId(currentUserId)
-                    .orElseThrow(() -> new EntityNotFoundException("Doctor profile missing."));
-            
-            // Doctor Dashboard Logic: If no dates are provided, fetch TODAY's appointments by default.
-            if (!isFilteringByDate) {
-                 // Fetch TODAY's schedule (Dashboard View)
-                 
-                 appointments = appointmentRepository.findByDoctorId(
-                    doctor.getId());
-            } else {
-                 // If dates ARE provided (from the general list's filter component), use the full range
-                 LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : LocalDateTime.MIN;
-                 LocalDateTime endDateTime = endDate != null ? endDate.atTime(LocalTime.MAX) : LocalDateTime.MAX;
-                 appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
-                    doctor.getId(), startDateTime, endDateTime);
-            }
-        } else if (role == RoleName.ROLE_PATIENT) {
-             Patient patient = patientRepository.findByUserId(currentUserId)
-                     .orElseThrow(() -> new EntityNotFoundException("Patient profile missing."));
-                     
-             if (isFilteringByDate) {
-         
-                 appointments = appointmentRepository.findByPatientId(
-                     patient.getId());
-             } else {
-                 // Patient List View (no filter): Fetch ALL appointments
-                 appointments = appointmentRepository.findByPatientId(patient.getId()); 
-             }
+        if (isFilteringActive) {
+            // Case 1: Filter active (called from general list or dashboard date search)
+            appointments = appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(
+                doctor.getId(), startDateTime, endDateTime);
         } else {
-            return List.of(); 
+            // Case 2: No filter active (called from general list with empty filters)
+            // NOTE: This will return ALL appointments for the doctor if called without params
+            appointments = appointmentRepository.findByDoctorId(doctor.getId());
         }
-        
-        return appointments.stream().map(this::mapToDto).collect(Collectors.toList());
+    
+    // --- Patient Role Logic ---
+    } else if (role == RoleName.ROLE_PATIENT) {
+         Patient patient = patientRepository.findByUserId(currentUserId)
+                 .orElseThrow(() -> new EntityNotFoundException("Patient profile missing."));
+                     
+         if (isFilteringActive) {
+             // Case 1: Filter active
+             appointments = appointmentRepository.findByPatientIdAndAppointmentTimeBetween(
+                 patient.getId(), startDateTime, endDateTime);
+         } else {
+             // Case 2: No filter active (Return ALL appointments for the patient)
+             appointments = appointmentRepository.findByPatientId(patient.getId()); 
+         }
+         
+    // --- Admin Role Logic ---
+    } else if (role == RoleName.ROLE_ADMIN) {
+        if (isFilteringActive) {
+            appointments = appointmentRepository.findByAppointmentTimeBetween(startDateTime, endDateTime);
+        } else {
+            appointments = appointmentRepository.findAll();
+        }
+    } else {
+        return List.of(); 
     }
+    
+    return appointments.stream().map(this::mapToDto).collect(Collectors.toList());
+}
  // src/main/java/com.example.hms.service.AppointmentService (Add this method)
 
     public List<AppointmentDto> getTodayAppointmentsForDoctor() {
