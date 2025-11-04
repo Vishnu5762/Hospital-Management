@@ -2,7 +2,7 @@
   "name": "hms-frontend",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://hospital-management-backend-v955.onrender.com/api/auth",
+  "proxy": "https://hospital-management-backend-v955.onrender.com",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
