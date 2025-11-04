@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Enables @PreAuthorize on service/controller methods
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
     @Autowired 
@@ -27,7 +27,6 @@ public class WebSecurityConfig {
     @Autowired 
     private JwtAuthTokenFilter jwtAuthTokenFilter;
 
-    // Required to ensure the filter can be autowired in the config
     @Bean
     public JwtAuthTokenFilter authenticationJwtTokenFilter() {
         return new JwtAuthTokenFilter();
@@ -38,7 +37,6 @@ public class WebSecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Defines how to authenticate users (using our UserDetailsService and BCrypt)
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -47,31 +45,25 @@ public class WebSecurityConfig {
         return authProvider;
     }
 
-    // Exposes the AuthenticationManager bean for use in the AuthController (login)
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // Defines the security filter chain rules
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless REST APIs
-            // Set session management to stateless (Crucial for JWT)
+        http.csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
-            // Define Authorization Rules
+            // Authorization Rules: Login paths are public
             .authorizeHttpRequests(auth -> auth
-                // Allow public access to all authentication/reset endpoints
                 .requestMatchers("/api/auth/**").permitAll() 
-                // Require authentication for all other requests
                 .anyRequest().authenticated()
             );
 
-        // Configure the Authentication Provider
         http.authenticationProvider(authenticationProvider());
         
-        // Add the custom JWT validation filter BEFORE the standard Spring filter
+        // Add the JWT filter to the chain, placed before the standard filter
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
