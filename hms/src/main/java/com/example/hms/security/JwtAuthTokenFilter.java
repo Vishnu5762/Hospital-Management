@@ -11,9 +11,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.util.AntPathMatcher; // Required for path matching
+import org.springframework.util.AntPathMatcher;
 import java.io.IOException;
-import java.util.Arrays; // Required for Arrays.stream
+import java.util.Arrays;
 
 @Component
 public class JwtAuthTokenFilter extends OncePerRequestFilter {
@@ -23,7 +23,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
 
     // --- CRITICAL FIX: Define public paths to exclude from filtering ---
     private static final String[] EXCLUDE_PATHS = {
-        "/api/auth/**" // Excludes /api/auth/login, /api/auth/register, /api/auth/password/**
+        "/api/auth/**"
     };
 
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -33,7 +33,7 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        // Skips the filter if the request path matches any path in the EXCLUDE_PATHS array.
+        // Skips the filter if the request path matches the exclusion list (e.g., /api/auth/login)
         return Arrays.stream(EXCLUDE_PATHS)
                      .anyMatch(path -> pathMatcher.match(path, request.getServletPath()));
     }
@@ -44,7 +44,6 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        // doFilterInternal logic will only run if shouldNotFilter() returns FALSE (i.e., token is expected)
         try {
             String jwt = parseJwt(request); 
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
@@ -59,7 +58,8 @@ public class JwtAuthTokenFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e.getMessage());
+            // FIX: Pass the exception object 'e' correctly to the logger
+            logger.error("Error setting user authentication:", e);
         }
 
         filterChain.doFilter(request, response);
