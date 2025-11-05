@@ -1,6 +1,6 @@
 // src/services/appointmentService.js
 
-import axios from 'axios';
+import apiClient from './apiClient';
 
 // CRITICAL: Set the base domain for the deployed backend service
 const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com"; // <-- Use your actual Render URL
@@ -23,7 +23,7 @@ const getMyAppointments = async (startDate, endDate) => {
     }
 
     // Axios will send parameters ONLY if they are populated
-    const response = await axios.get(APPOINTMENT_API_URL + "/my", { params });
+    const response = await apiClient.get(APPOINTMENT_API_URL + "/my", { params });
     return response.data;
 };
 
@@ -42,7 +42,7 @@ const getTodayAppointments = async () => {
     const todayString = getTodayDateString();
     
     // Call the general filtering endpoint, passing today as the fixed range.
-    const response = await axios.get(APPOINTMENT_API_URL + "/my", { 
+    const response = await apiClient.get(APPOINTMENT_API_URL + "/my", { 
         params: { 
             startDate: todayString, 
             endDate: todayString 
@@ -53,13 +53,13 @@ const getTodayAppointments = async () => {
 
 // 3. Book a new appointment (POST /api/appointments)
 const bookAppointment = async (appointmentData) => {
-    const response = await axios.post(APPOINTMENT_API_URL, appointmentData);
+    const response = await apiClient.post(APPOINTMENT_API_URL, appointmentData);
     return response.data;
 };
 
 // 4. Update appointment status (PATCH /api/appointments/{id}/status)
 const updateStatus = async (appointmentId, newStatus) => {
-    const response = await axios.patch(
+    const response = await apiClient.patch(
         `${APPOINTMENT_API_URL}/${appointmentId}/status?status=${newStatus}`
     );
     return response.data;
@@ -68,7 +68,7 @@ const updateStatus = async (appointmentId, newStatus) => {
 // 5. Fetch list of Doctors (GET /api/doctors)
 const getDoctors = async () => {
     // Call the dedicated Doctor API endpoint
-    const response = await axios.get(DOCTOR_API_URL); 
+    const response = await apiClient.get(DOCTOR_API_URL); 
     return response.data;
 };
 
