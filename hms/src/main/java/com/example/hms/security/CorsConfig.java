@@ -1,4 +1,4 @@
-package com.example.hms.config;
+package com.example.hms.security;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
