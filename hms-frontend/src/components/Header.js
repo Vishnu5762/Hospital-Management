@@ -20,7 +20,7 @@ const getRoleLinks = (role) => {
     if (role === 'ROLE_DOCTOR' || role === 'ROLE_ADMIN') {
         links = [
             // Doctor uses dashboard as schedule hub
-            { title: 'Appointments', path: '/doctor/dashboard' }, 
+            { title: 'Appointments', path: '/appointments/list' }, 
             { title: 'Patient Records', path: '/records/list' }
         ];
     } else if (role === 'ROLE_PATIENT') {
