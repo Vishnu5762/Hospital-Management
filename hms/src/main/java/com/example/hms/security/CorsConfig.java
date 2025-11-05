@@ -1,5 +1,3 @@
-// src/main/java/com/example.hms.config/CorsConfig.java
-
 package com.example.hms.security;
 
 import org.springframework.context.annotation.Configuration;
@@ -9,15 +7,27 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    // You MUST replace this placeholder with the actual live domain of your React frontend.
-    private static final String FRONTEND_URL = "https://hospital-management-a9qk.onrender.com"; 
+    // IMPORTANT: Replace this placeholder with your actual live React frontend domain.
+    // Assuming your frontend deployed on Render is: hospital-management-a9qk.onrender.com
+    private static final String FRONTEND_DOMAIN = "https://hospital-management-a9qk.onrender.com"; 
+    
+    // NOTE: You must also ensure that the backend application is running under the 
+    // com.example.hms.config package structure, as defined here.
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**") // Apply this policy to all API endpoints
-                .allowedOrigins("http://localhost:3000", FRONTEND_URL) // Whitelist local and production domain
+        registry.addMapping("/api/**") // Apply CORS policy to all /api endpoints
+                
+                // Whitelist your local development domain and the deployed production domain
+                .allowedOrigins("http://localhost:3000", FRONTEND_DOMAIN) 
+                
+                // Allow necessary HTTP methods for login, CRUD, and status updates
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-                .allowedHeaders("*") // Allow all headers (Content-Type, Authorization)
-                .allowCredentials(true); // Allow credentials (for future cookie/auth needs)
+                
+                // CRITICAL FIX: Allow all headers, which includes the 'Authorization' header for JWTs
+                .allowedHeaders("*") 
+                
+                // Allow cookies and authorization credentials
+                .allowCredentials(true); 
     }
 }
