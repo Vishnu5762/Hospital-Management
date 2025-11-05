@@ -52,18 +52,23 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
+        http
+            // ✅ Enable CORS support from CorsConfig.java
+            .cors()  
+            .and()
+            .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
-            // Authorization Rules: Login paths are public
+            // Authorization Rules: Login & Register are public
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() 
+                .requestMatchers("/api/auth/**").permitAll()
                 .anyRequest().authenticated()
             );
 
+        // ✅ Add authentication provider
         http.authenticationProvider(authenticationProvider());
-        
-        // Add the JWT filter to the chain, placed before the standard filter
+
+        // ✅ Add JWT filter before the UsernamePasswordAuthenticationFilter
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
