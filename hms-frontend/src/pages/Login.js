@@ -119,10 +119,11 @@ const Login = () => {
                             >
                                 Forgot Password?
                             </Typography>
-                            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+                            
+                        </Box>
+                        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
     Note: At the first hit server takes time to wakeup and process request kindly wait for 30-50 seconds
 </Typography>
-                        </Box>
                     </Box>
                 </CardContent>
             </Card>
