@@ -9,11 +9,11 @@ import {
     Alert, CircularProgress, Button, Paper 
 } from '@mui/material';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import PeopleIcon from '../components/PeopleIcon'; // Assuming a custom icon import or MUI
+import PeopleIcon from '@mui/icons-material/People';
 import PostAddIcon from '@mui/icons-material/PostAdd'; 
 import RefreshIcon from '@mui/icons-material/Refresh'; 
 import appointmentService from '../services/appointmentService'; 
-import { useAuth } from '../context/AuthAuthContext'; // Corrected import reference
+import { useAuth } from '../context/AuthContext'; 
 
 // ========================================================================
 // 1. NESTED COMPONENT: DoctorAppointmentTable (Table Structure and Actions)
@@ -25,7 +25,6 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
         const newStatus = 'COMPLETED'; 
         
         try {
-            // Placeholder for API call (assumed to be working)
             const updatedAppt = await appointmentService.updateStatus(apptId, newStatus); 
             onStatusUpdate(updatedAppt.id, updatedAppt.status); 
 
@@ -118,7 +117,7 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
 
 
 // ========================================================================
-// 2. MAIN COMPONENT: DoctorDashboard (FINAL STABLE VERSION)
+// 2. MAIN COMPONENT: DoctorDashboard (FIXED FETCHING LOGIC)
 // ========================================================================
 const DoctorDashboard = () => {
     const { role, user } = useAuth(); 
@@ -142,18 +141,18 @@ const DoctorDashboard = () => {
     const fetchAppointments = async () => {
         try {
             // Call the general endpoint that fetches ALL of the doctor's appointments
-            // This is the most reliable endpoint that should not crash on the server.
+            // We do this because the specialized /today endpoint is crashing.
             const response = await appointmentService.getMyAppointments(); 
             const allAppointments = response.data; 
 
             // CRITICAL FIX: Filter the results LOCALLY for TODAY's schedule only
             const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
             
-            setAppointments(todayAppointments); // Set only today's appointments to the state
-            setError(null); // Clear previous errors on successful data fetch
+            setAppointments(todayAppointments); 
+            setError(null); 
         } catch (err) {
-            // Set the error state to display the alert
-            setError("Failed to fetch appointments. Check backend console for generic list endpoint."); 
+            // This displays if the general API /my is failing.
+            setError("Failed to fetch appointments."); 
             console.error("Appointment fetch error:", err);
         } finally {
             setLoading(false);
@@ -193,7 +192,7 @@ const DoctorDashboard = () => {
                     borderRadius: 2,
                     boxShadow: 2
                 }}>
-                    {/* FIX: Welcome Message uses the correct 'name' property (which holds the full name) */}
+                    {/* FIX: Welcome Message uses the correct 'name' property */}
                     <Typography variant="h3" gutterBottom color="primary.dark">
                         Welcome back, Dr. {user?.name || 'Guest'}!
                     </Typography>
