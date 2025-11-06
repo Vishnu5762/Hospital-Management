@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 // 1. NESTED COMPONENT: DoctorAppointmentTable 
 // ========================================================================
 const DoctorAppointmentTable = ({ appointments, role, onStatusUpdate }) => { 
-    console.log("in the DoctorAppointmenttable"+appointments);
+    
     const handleStatusUpdate = async (apptId, currentStatus) => {
         const newStatus = 'COMPLETED'; 
         
@@ -144,7 +144,7 @@ const DoctorDashboard = () => {
             const allAppointments = response.data; 
         
             setAppointments(allAppointments); // Set only today's appointments to the state
-            console.log("in fetch appointments"+allAppointments);
+            console.log(appointments);
             setError(null); // Clear previous errors on successful fetch
         } catch (err) {
             // Set the error state to display the alert
