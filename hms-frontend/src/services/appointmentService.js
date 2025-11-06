@@ -39,7 +39,11 @@ const updateStatus = async (appointmentId, newStatus) => {
     );
     return response.data;
 };
-
+const getTodayAppointmentsForDoctor = async () => {
+    // This calls the dedicated backend endpoint restricted to doctors
+    const response = await apiClient.get(APPOINTMENT_API_URL + "/today"); 
+    return response.data;
+};
 // 4. Fetch list of Doctors (GET /api/doctors)
 const getDoctors = async () => {
     const response = await apiClient.get(DOCTOR_API_URL); 
@@ -52,7 +56,8 @@ const appointmentService = {
     getMyAppointments, 
     bookAppointment, 
     updateStatus, 
-    getDoctors 
+    getDoctors,
+    getTodayAppointmentsForDoctor
 };
 
 export default appointmentService;
