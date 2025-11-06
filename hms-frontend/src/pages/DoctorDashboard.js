@@ -1,227 +1,58 @@
-// src/pages/DoctorDashboard.js
+// src/services/appointmentService.js
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
-import { 
-    Typography, Grid, Card, CardContent, CardActionArea, Box, 
-    Table, TableContainer, TableHead, TableRow, TableCell, TableBody, 
-    Alert, CircularProgress, Button, Paper 
-} from '@mui/material';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
-import PeopleIcon from '@mui/icons-material/People';
-import PostAddIcon from '@mui/icons-material/PostAdd'; 
-import RefreshIcon from '@mui/icons-material/Refresh'; 
-import appointmentService from '../services/appointmentService'; 
-import { useAuth } from '../context/AuthContext'; 
+import apiClient from './apiClient'; // Assuming this is your configured Axios instance
+// NOTE: Ensure your apiClient is correctly pointing to the live Render backend URL
 
-// ========================================================================
-// 1. NESTED COMPONENT: DoctorAppointmentTable (Table Structure and Actions)
-// ========================================================================
-const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => { 
+const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com"; 
+const API_BASE = BASE_DOMAIN + "/api"; 
+const APPOINTMENT_API_URL = API_BASE + "/appointments";
+const DOCTOR_API_URL = API_BASE + "/doctors";
+
+
+// 1. Fetch appointments accessible by the current user (GENERAL LIST)
+// Backend endpoint: GET /api/appointments/my?startDate=...
+const getMyAppointments = async (startDate, endDate) => {
+    const params = {};
     
-    // Handles the status update API call and triggers parent state change
-    const handleStatusUpdate = async (apptId, currentStatus) => {
-        const newStatus = 'COMPLETED'; 
-        
-        try {
-            const updatedAppt = await appointmentService.updateStatus(apptId, newStatus); 
-            onStatusUpdate(updatedAppt.id, updatedAppt.status); 
-        } catch (error) {
-            alert(`Failed to update status. Check backend console for details.`); 
-            console.error("Status update failed:", error);
-        }
-    };
-
-    // Safely check appointments.length
-    if (appointments.length === 0) {
-        return <Alert severity="info" sx={{ mt: 2 }}>You have no appointments scheduled for today.</Alert>;
+    if (startDate) {
+        params.startDate = startDate; // Sends 'YYYY-MM-DD'
+    }
+    if (endDate) {
+        params.endDate = endDate; // Sends 'YYYY-MM-DD'
     }
 
-    return (
-        <TableContainer component={Paper} sx={{ mt: 2 }}>
-            <Table size="small">
-                <TableHead>
-                    <TableRow sx={{ backgroundColor: '#e0e0e0' }}>
-                        <TableCell>Time</TableCell>
-                        <TableCell>Patient</TableCell>
-                        <TableCell>Reason</TableCell>
-                        <TableCell>Status</TableCell>
-                        {role === 'ROLE_DOCTOR' && <TableCell align="center">Manage</TableCell>} 
-                        {role === 'ROLE_DOCTOR' && <TableCell align="center">Record</TableCell>} 
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {appointments.map((appt) => (
-                        <TableRow key={appt.id}>
-                            <TableCell>{new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
-                            <TableCell>{appt.patientName}</TableCell>
-                            <TableCell>{appt.reason}</TableCell>
-                            <TableCell>
-                                <Typography variant="body2" color={appt.status === 'SCHEDULED' ? 'primary' : appt.status === 'COMPLETED' ? 'success' : 'error'}>
-                                    {appt.status}
-                                </Typography>
-                            </TableCell>
-                            
-                            {/* 1. Manage Column (Status Update) */}
-                            {role === 'ROLE_DOCTOR' && (
-                                <TableCell align="center">
-                                    {appt.status === 'SCHEDULED' ? ( 
-                                        <Button 
-                                            variant="outlined" 
-                                            size="small" 
-                                            color="primary"
-                                            startIcon={<RefreshIcon />}
-                                            onClick={() => handleStatusUpdate(appt.id, appt.status)}
-                                        >
-                                            Update Status
-                                        </Button>
-                                    ) : (
-                                        <Typography variant="caption" color="text.secondary">-</Typography>
-                                    )}
-                                </TableCell>
-                            )}
+    // Axios will send parameters ONLY if they are populated
+    const response = await apiClient.get(APPOINTMENT_API_URL + "/my", { params });
+    return response.data;
+};
 
-                            {/* 2. Record Column (Creation/Updated Text) */}
-                            {role === 'ROLE_DOCTOR' && (
-                                <TableCell align="center">
-                                    {appt.hasRecord ? ( 
-                                        <Typography variant="caption" color="success" sx={{ fontWeight: 'bold' }}>Record Updated</Typography>
-                                    ) : (
-                                        appt.status === 'COMPLETED' ? (
-                                            <Button 
-                                                variant="contained" 
-                                                size="small" 
-                                                color="success"
-                                                startIcon={<PostAddIcon />}
-                                                component={Link}
-                                                to={`/records/create/${appt.patientId}/${appt.doctorId}`} 
-                                                state={{ patientName: appt.patientName, doctorName: appt.doctorName, apptId: appt.id }}
-                                            >
-                                                Create Record
-                                            </Button>
-                                        ) : (
-                                            <Typography variant="caption" color="text.secondary">-</Typography>
-                                        )
-                                    )}
-                                </TableCell>
-                            )}
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableContainer>
+// 2. Book a new appointment (POST /api/appointments)
+const bookAppointment = async (appointmentData) => {
+    const response = await apiClient.post(APPOINTMENT_API_URL, appointmentData);
+    return response.data;
+};
+
+// 3. Update appointment status (PATCH /api/appointments/{id}/status)
+const updateStatus = async (appointmentId, newStatus) => {
+    const response = await apiClient.patch(
+        `${APPOINTMENT_API_URL}/${appointmentId}/status?status=${newStatus}`
     );
-};
-// ========================================================================
-
-
-// ========================================================================
-// 2. MAIN COMPONENT: DoctorDashboard
-// ========================================================================
-const DoctorDashboard = () => {
-    const { role, user } = useAuth(); 
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-
-    // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
-    const fetchAppointments = async () => {
-    try {
-        // CRITICAL FIX: Call the dedicated, parameter-less service method
-        const responseData = await appointmentService.getTodayAppointmentsForDoctor(); 
-        
-        setAppointments(responseData); // Data is already filtered by the server
-        setError(null); 
-    } catch (err) {
-        setError("Failed to fetch appointments.");
-        console.error("Appointment fetch error:", err);
-    } finally {
-        setLoading(false);
-    }
+    return response.data;
 };
 
-    // Load appointments on component mount
-    useEffect(() => {
-        fetchAppointments();
-    }, []);
-
-    // Function to update local state after a successful API status change
-    const handleLocalStatusUpdate = (apptId, newStatus) => {
-        setAppointments(prev => 
-            prev.map(a => {
-                if (a.id === apptId) {
-                    return { ...a, status: newStatus, hasRecord: false };
-                }
-                return a;
-            })
-        );
-    };
-
-    const modules = [
-        { title: "My Patient Records", icon: <PeopleIcon sx={{ fontSize: 40 }} color="success" />, path: "/records/list" }, 
-    ];
-
-    return (
-        <Layout>
-            <Box sx={{ p: 3 }}>
-                
-                {/* 1. Welcome Hero Section (STYLED CONTENT) */}
-                <Box sx={{ 
-                    mb: 5, 
-                    p: 4, 
-                    backgroundColor: '#e3f2fd',
-                    borderRadius: 2,
-                    boxShadow: 2
-                }}>
-                    <Typography variant="h3" gutterBottom color="primary.dark">
-                        Welcome back, Dr. {user?.name || 'Guest'}!
-                    </Typography>
-                    <Typography variant="h6" color="text.secondary">
-                        Your management hub for patient care and documentation.
-                    </Typography>
-                </Box>
-
-                {/* 2. Quick Action Modules */}
-                <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
-                    Quick Actions
-                </Typography>
-                
-                <Grid container spacing={4} sx={{ mb: 4 }}>
-                    {modules.map((module) => (
-                        <Grid item xs={12} sm={6} md={3} key={module.title}>
-                            <Card className="feature-card">
-                                <CardActionArea component={Link} to={module.path}> 
-                                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                                        {module.icon}
-                                        <Typography variant="h6" sx={{ mt: 1 }}>{module.title}</Typography>
-                                    </CardContent>
-                                </CardActionArea>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-
-                {/* 3. Schedule List Section */}
-                <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-                    Today's Schedule
-                </Typography>
-                
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>
-                ) : (
-                    <DoctorAppointmentTable 
-                        appointments={appointments} 
-                        role={role}
-                        onStatusUpdate={handleLocalStatusUpdate} 
-                    />
-                )}
-            </Box>
-        </Layout>
-    );
+// 4. Fetch list of Doctors (GET /api/doctors)
+const getDoctors = async () => {
+    const response = await apiClient.get(DOCTOR_API_URL); 
+    return response.data;
 };
 
-export default DoctorDashboard;
+
+// Consolidate and export the final service object
+const appointmentService = { 
+    getMyAppointments, 
+    bookAppointment, 
+    updateStatus, 
+    getDoctors 
+};
+
+export default appointmentService;
