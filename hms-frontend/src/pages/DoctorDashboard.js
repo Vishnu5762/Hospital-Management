@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 // ========================================================================
 // 1. NESTED COMPONENT: DoctorAppointmentTable 
 // ========================================================================
-const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => { 
+const DoctorAppointmentTable = ({ appointments, role, onStatusUpdate }) => { 
     
     const handleStatusUpdate = async (apptId, currentStatus) => {
         const newStatus = 'COMPLETED'; 
