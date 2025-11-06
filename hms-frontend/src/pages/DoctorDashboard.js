@@ -16,7 +16,7 @@ import appointmentService from '../services/appointmentService';
 import { useAuth } from '../context/AuthContext'; 
 
 // ========================================================================
-// 1. NESTED COMPONENT: DoctorAppointmentTable 
+// 1. NESTED COMPONENT: DoctorAppointmentTable (Table Structure and Actions)
 // ========================================================================
 const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => { 
     
@@ -27,13 +27,13 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
         try {
             const updatedAppt = await appointmentService.updateStatus(apptId, newStatus); 
             onStatusUpdate(updatedAppt.id, updatedAppt.status); 
-
         } catch (error) {
             alert(`Failed to update status. Check backend console for details.`); 
             console.error("Status update failed:", error);
         }
     };
 
+    // Safely check appointments.length
     if (appointments.length === 0) {
         return <Alert severity="info" sx={{ mt: 2 }}>You have no appointments scheduled for today.</Alert>;
     }
@@ -54,8 +54,7 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
                 <TableBody>
                     {appointments.map((appt) => (
                         <TableRow key={appt.id}>
-                            {/* FIX: Use the final display time format (HH:MM) */}
-                            <TableCell>{appt.displayTime || new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                            <TableCell>{new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
                             <TableCell>{appt.patientName}</TableCell>
                             <TableCell>{appt.reason}</TableCell>
                             <TableCell>
@@ -126,7 +125,7 @@ const DoctorDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Helper function to check if an appointment is for today (CRITICAL FOR FILTERING)
+    // Helper function to check if an appointment is for today (CRITICAL FOR LOCAL FILTERING)
     const isToday = (appointmentTime) => {
         // Normalizes times to midnight for reliable date comparison
         const today = new Date();
@@ -141,19 +140,17 @@ const DoctorDashboard = () => {
     // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
     const fetchAppointments = async () => {
         try {
-            // Call the general endpoint that fetches ALL of the doctor's appointments
-            // This endpoint is robust and should not crash on the server.
+            // FIX: Call the reliable general endpoint that fetches ALL of the doctor's appointments
             const response = await appointmentService.getMyAppointments(); 
             const allAppointments = response.data; 
 
-            // CRITICAL FIX: Filter the results LOCALLY for TODAY's schedule only
+            // Filter the results LOCALLY for TODAY's schedule only
             const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
             
             setAppointments(todayAppointments); // Set only today's appointments to the state
             setError(null); // Clear error on success
         } catch (err) {
-            // Set the error state to display the alert
-            setError("Failed to fetch appointments. Check backend console for generic list endpoint."); 
+            setError("Failed to fetch appointments.");
             console.error("Appointment fetch error:", err);
         } finally {
             setLoading(false);
