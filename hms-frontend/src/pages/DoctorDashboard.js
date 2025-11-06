@@ -34,7 +34,6 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
         }
     };
 
-    // FIX: Safely check appointments.length
     if (appointments.length === 0) {
         return <Alert severity="info" sx={{ mt: 2 }}>You have no appointments scheduled for today.</Alert>;
     }
@@ -55,7 +54,8 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
                 <TableBody>
                     {appointments.map((appt) => (
                         <TableRow key={appt.id}>
-                            <TableCell>{new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                            {/* FIX: Use the final display time format (HH:MM) */}
+                            <TableCell>{appt.displayTime || new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
                             <TableCell>{appt.patientName}</TableCell>
                             <TableCell>{appt.reason}</TableCell>
                             <TableCell>
@@ -118,42 +118,55 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
 
 
 // ========================================================================
-// 2. MAIN COMPONENT: DoctorDashboard (FIXED SCOPE)
+// 2. MAIN COMPONENT: DoctorDashboard
 // ========================================================================
 const DoctorDashboard = () => {
     const { role, user } = useAuth(); 
-    // CRITICAL: Handlers and State must be defined at the start of this function
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Function to fetch appointments from the backend
+    // Helper function to check if an appointment is for today (CRITICAL FOR FILTERING)
     const isToday = (appointmentTime) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize time to 00:00:00
+        // Normalizes times to midnight for reliable date comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
 
-    const apptDate = new Date(appointmentTime);
-    apptDate.setHours(0, 0, 0, 0); 
-    
-    return apptDate.getTime() === today.getTime();
-};
+        const apptDate = new Date(appointmentTime);
+        apptDate.setHours(0, 0, 0, 0); 
+        
+        return apptDate.getTime() === today.getTime();
+    };
 
-// Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
-const fetchAppointments = async () => {
-    try {
-        // Now calling the correctly exported service method
-        const responseData = await appointmentService.getTodayAppointmentsForDoctor(); 
-        setAppointments(responseData); 
-        setError(null); // Clears the "Failed to fetch" alert
-    } catch (err) {
-        setError("Failed to fetch appointments.");
-        console.error("Appointment fetch error:", err);
-    } finally {
-        setLoading(false);
-    }
-}; // Function to update local state after a successful API status change
+    // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
+    const fetchAppointments = async () => {
+        try {
+            // Call the general endpoint that fetches ALL of the doctor's appointments
+            // This endpoint is robust and should not crash on the server.
+            const response = await appointmentService.getMyAppointments(); 
+            const allAppointments = response.data; 
+
+            // CRITICAL FIX: Filter the results LOCALLY for TODAY's schedule only
+            const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
+            
+            setAppointments(todayAppointments); // Set only today's appointments to the state
+            setError(null); // Clear error on success
+        } catch (err) {
+            // Set the error state to display the alert
+            setError("Failed to fetch appointments. Check backend console for generic list endpoint."); 
+            console.error("Appointment fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Load appointments on component mount
+    useEffect(() => {
+        fetchAppointments();
+    }, []);
+
+    // Function to update local state after a successful API status change
     const handleLocalStatusUpdate = (apptId, newStatus) => {
-        // FIX: This handler must be defined inside the main component scope
         setAppointments(prev => 
             prev.map(a => {
                 if (a.id === apptId) {
@@ -164,16 +177,10 @@ const fetchAppointments = async () => {
         );
     };
 
-    // Load appointments on component mount
-    useEffect(() => {
-        fetchAppointments();
-    }, []);
-
     const modules = [
         { title: "My Patient Records", icon: <PeopleIcon sx={{ fontSize: 40 }} color="success" />, path: "/records/list" }, 
     ];
 
-    // FIX: Added optional chaining to user?.username in the hero section for safety
     return (
         <Layout>
             <Box sx={{ p: 3 }}>
@@ -182,7 +189,7 @@ const fetchAppointments = async () => {
                 <Box sx={{ 
                     mb: 5, 
                     p: 4, 
-                    backgroundColor: '#e3f2fd', 
+                    backgroundColor: '#e3f2fd',
                     borderRadius: 2,
                     boxShadow: 2
                 }}>
@@ -228,7 +235,7 @@ const fetchAppointments = async () => {
                     <DoctorAppointmentTable 
                         appointments={appointments} 
                         role={role}
-                        onStatusUpdate={handleLocalStatusUpdate} // Passes the correctly scoped handler
+                        onStatusUpdate={handleLocalStatusUpdate} 
                     />
                 )}
             </Box>
