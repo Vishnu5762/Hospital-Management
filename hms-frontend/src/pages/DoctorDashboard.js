@@ -125,33 +125,22 @@ const DoctorDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Helper function to check if an appointment is for today (CRITICAL FOR LOCAL FILTERING)
-    const isToday = (appointmentTime) => {
-        // Normalizes times to midnight for reliable date comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); 
-
-        const apptDate = new Date(appointmentTime);
-        apptDate.setHours(0, 0, 0, 0); 
-        
-        return apptDate.getTime() === today.getTime();
-    };
 
     // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
     const fetchAppointments = async () => {
-        try {
-        // Now calling the correctly exported service method
+    try {
+        // CRITICAL FIX: Call the dedicated, parameter-less service method
         const responseData = await appointmentService.getTodayAppointmentsForDoctor(); 
         
-        setAppointments(responseData); 
-        setError(null); // Clears the "Failed to fetch" alert
+        setAppointments(responseData); // Data is already filtered by the server
+        setError(null); 
     } catch (err) {
         setError("Failed to fetch appointments.");
         console.error("Appointment fetch error:", err);
     } finally {
         setLoading(false);
     }
-    };
+};
 
     // Load appointments on component mount
     useEffect(() => {
@@ -224,7 +213,6 @@ const DoctorDashboard = () => {
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>
                 ) : (
-                    // Renders the Appointment Table OR the "No appointments" alert
                     <DoctorAppointmentTable 
                         appointments={appointments} 
                         role={role}
