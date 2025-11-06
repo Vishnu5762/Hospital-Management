@@ -144,7 +144,7 @@ const DoctorDashboard = () => {
             const allAppointments = response.data; 
         
             setAppointments(allAppointments); // Set only today's appointments to the state
-            console.log(appointments);
+           
             setError(null); // Clear previous errors on successful fetch
         } catch (err) {
             // Set the error state to display the alert
