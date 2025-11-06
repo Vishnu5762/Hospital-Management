@@ -142,11 +142,9 @@ const DoctorDashboard = () => {
         try {
             // Call the general endpoint that fetches ALL of the doctor's appointments
             // We do this because the specialized /today endpoint is crashing.
-            const response = await appointmentService.getMyAppointments(); 
+            const response = await appointmentService.getTodayAppointmentsForDoctor(); 
             const allAppointments = response.data; 
 
-            // CRITICAL FIX: Filter the results LOCALLY for TODAY's schedule only
-            const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
             
             setAppointments(todayAppointments); 
             setError(null); 
