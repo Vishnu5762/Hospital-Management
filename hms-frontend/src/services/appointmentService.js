@@ -1,57 +1,48 @@
 // src/services/appointmentService.js
 
-import apiClient from './apiClient'; // Assuming this is your configured Axios instance
-// NOTE: Ensure your apiClient is correctly pointing to the live Render backend URL
+import apiClient from './apiClient'; // Your configured Axios instance
 
 const BASE_DOMAIN = "https://hospital-management-backend-v955.onrender.com"; 
 const API_BASE = BASE_DOMAIN + "/api"; 
 const APPOINTMENT_API_URL = API_BASE + "/appointments";
 const DOCTOR_API_URL = API_BASE + "/doctors";
 
-
-// 1. Fetch appointments accessible by the current user (GENERAL LIST)
-// Backend endpoint: GET /api/appointments/my?startDate=...
+// 1. Fetch user's appointments (optional, not used in dashboard)
 const getMyAppointments = async (startDate, endDate) => {
     const params = {};
-    
-    if (startDate) {
-        params.startDate = startDate; // Sends 'YYYY-MM-DD'
-    }
-    if (endDate) {
-        params.endDate = endDate; // Sends 'YYYY-MM-DD'
-    }
-
-    // Axios will send parameters ONLY if they are populated
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
     const response = await apiClient.get(APPOINTMENT_API_URL + "/my", { params });
     return response.data;
 };
 
-// 2. Book a new appointment (POST /api/appointments)
+// 2. Book a new appointment
 const bookAppointment = async (appointmentData) => {
     const response = await apiClient.post(APPOINTMENT_API_URL, appointmentData);
     return response.data;
 };
 
-// 3. Update appointment status (PATCH /api/appointments/{id}/status)
+// 3. Update appointment status
 const updateStatus = async (appointmentId, newStatus) => {
     const response = await apiClient.patch(
         `${APPOINTMENT_API_URL}/${appointmentId}/status?status=${newStatus}`
     );
     return response.data;
 };
+
+// ✅ 4. Get today's appointments for doctor
 const getTodayAppointmentsForDoctor = async () => {
-    // This calls the dedicated backend endpoint restricted to doctors
     const response = await apiClient.get(APPOINTMENT_API_URL + "/today"); 
     return response.data;
 };
-// 4. Fetch list of Doctors (GET /api/doctors)
+
+// 5. Fetch all doctors
 const getDoctors = async () => {
     const response = await apiClient.get(DOCTOR_API_URL); 
     return response.data;
 };
 
-
-// Consolidate and export the final service object
+// Export all
 const appointmentService = { 
     getMyAppointments, 
     bookAppointment, 
