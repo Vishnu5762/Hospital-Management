@@ -26,7 +26,11 @@ const getMyAppointments = async (startDate, endDate) => {
     const response = await apiClient.get(APPOINTMENT_API_URL + "/my", { params });
     return response.data;
 };
-
+const getTodayAppointmentsForDoctor = async () => {
+    // This calls the dedicated backend endpoint restricted to doctors
+    const response = await apiClient.get(APPOINTMENT_API_URL+ "/today"); 
+    return response.data;
+};
 // 2. Fetch today's appointments (Used by DoctorDashboard)
 // This is done by calling the general list endpoint but passing today's date as the filter.
 const getTodayAppointments = async () => {
@@ -79,7 +83,8 @@ const appointmentService = {
     getTodayAppointments, // Used specifically by the dashboard
     bookAppointment, 
     updateStatus, 
-    getDoctors 
+    getDoctors,
+    getTodayAppointmentsForDoctor
 };
 
 export default appointmentService;
