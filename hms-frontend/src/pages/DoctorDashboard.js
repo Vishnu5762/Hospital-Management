@@ -140,13 +140,10 @@ const DoctorDashboard = () => {
     const fetchAppointments = async () => {
         try {
             // CRITICAL FIX: Call the general endpoint that fetches ALL of the doctor's appointments
-            const response = await appointmentService.getMyAppointments(); 
+            const response = await appointmentService.getTodayAppointmentsForDoctor(); 
             const allAppointments = response.data; 
-
-            // Filter the results LOCALLY for TODAY's schedule only
-            const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
-            
-            setAppointments(todayAppointments); // Set only today's appointments to the state
+        
+            setAppointments(allAppointments); // Set only today's appointments to the state
             setError(null); // Clear previous errors on successful fetch
         } catch (err) {
             // Set the error state to display the alert
