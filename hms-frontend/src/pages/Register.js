@@ -167,6 +167,9 @@ const Register = () => {
                         <Typography variant="body2" component={Link} to="/" align="center" sx={{ mt: 2 }}>
                             Already have an account? Login
                         </Typography>
+                        <Typography variant="body2"  align="center" sx={{ mt: 2 }}>
+                            Note: At the first hit server takes time to wakeup and process request kindly wait for 30-50 seconds
+                        </Typography>
                     </Box>
                 </CardContent>
             </Card>
