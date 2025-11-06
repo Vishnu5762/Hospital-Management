@@ -140,21 +140,17 @@ const DoctorDashboard = () => {
     // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
     const fetchAppointments = async () => {
         try {
-            // FIX: Call the reliable general endpoint that fetches ALL of the doctor's appointments
-            const response = await appointmentService.getMyAppointments(); 
-            const allAppointments = response.data; 
-
-            // Filter the results LOCALLY for TODAY's schedule only
-            const todayAppointments = allAppointments.filter(appt => isToday(appt.appointmentTime));
-            
-            setAppointments(todayAppointments); // Set only today's appointments to the state
-            setError(null); // Clear error on success
-        } catch (err) {
-            setError("Failed to fetch appointments.");
-            console.error("Appointment fetch error:", err);
-        } finally {
-            setLoading(false);
-        }
+        // Now calling the correctly exported service method
+        const responseData = await appointmentService.getTodayAppointmentsForDoctor(); 
+        
+        setAppointments(responseData); 
+        setError(null); // Clears the "Failed to fetch" alert
+    } catch (err) {
+        setError("Failed to fetch appointments.");
+        console.error("Appointment fetch error:", err);
+    } finally {
+        setLoading(false);
+    }
     };
 
     // Load appointments on component mount
