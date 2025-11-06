@@ -1,7 +1,7 @@
 // src/pages/DoctorDashboard.js
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { 
     Typography, Grid, Card, CardContent, CardActionArea, Box, 
@@ -20,14 +20,12 @@ import { useAuth } from '../context/AuthContext';
 // ========================================================================
 const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => { 
     
-    // Handles the status update API call and triggers parent state change
-    const handleStatusUpdate = async (apptId, currentStatus) => {
+    const handleStatusUpdate = async (apptId) => {
         const newStatus = 'COMPLETED'; 
         
         try {
             const updatedAppt = await appointmentService.updateStatus(apptId, newStatus); 
             onStatusUpdate(updatedAppt.id, updatedAppt.status); 
-
         } catch (error) {
             alert(`Failed to update status. Check backend console for details.`); 
             console.error("Status update failed:", error);
@@ -54,16 +52,27 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
                 <TableBody>
                     {appointments.map((appt) => (
                         <TableRow key={appt.id}>
-                            <TableCell>{new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                            <TableCell>
+                                {new Date(appt.appointmentTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </TableCell>
                             <TableCell>{appt.patientName}</TableCell>
                             <TableCell>{appt.reason}</TableCell>
                             <TableCell>
-                                <Typography variant="body2" color={appt.status === 'SCHEDULED' ? 'primary' : appt.status === 'COMPLETED' ? 'success' : 'error'}>
+                                <Typography 
+                                    variant="body2" 
+                                    color={
+                                        appt.status === 'SCHEDULED' 
+                                            ? 'primary' 
+                                            : appt.status === 'COMPLETED' 
+                                            ? 'success.main' 
+                                            : 'error.main'
+                                    }
+                                >
                                     {appt.status}
                                 </Typography>
                             </TableCell>
                             
-                            {/* 1. Manage Column (Status Update) */}
+                            {/* Manage Status */}
                             {role === 'ROLE_DOCTOR' && (
                                 <TableCell align="center">
                                     {appt.status === 'SCHEDULED' ? ( 
@@ -72,7 +81,7 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
                                             size="small" 
                                             color="primary"
                                             startIcon={<RefreshIcon />}
-                                            onClick={() => handleStatusUpdate(appt.id, appt.status)}
+                                            onClick={() => handleStatusUpdate(appt.id)}
                                         >
                                             Update Status
                                         </Button>
@@ -82,11 +91,13 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
                                 </TableCell>
                             )}
 
-                            {/* 2. Record Column (Creation/Updated Text) */}
+                            {/* Create Record */}
                             {role === 'ROLE_DOCTOR' && (
                                 <TableCell align="center">
                                     {appt.hasRecord ? ( 
-                                        <Typography variant="caption" color="success" sx={{ fontWeight: 'bold' }}>Record Updated</Typography>
+                                        <Typography variant="caption" color="success.main" sx={{ fontWeight: 'bold' }}>
+                                            Record Updated
+                                        </Typography>
                                     ) : (
                                         appt.status === 'COMPLETED' ? (
                                             <Button 
@@ -117,7 +128,7 @@ const DoctorAppointmentTable = ({ appointments = [], role, onStatusUpdate }) => 
 
 
 // ========================================================================
-// 2. MAIN COMPONENT: DoctorDashboard (FIXED FETCHING LOGIC)
+// 2. MAIN COMPONENT: DoctorDashboard
 // ========================================================================
 const DoctorDashboard = () => {
     const { role, user } = useAuth(); 
@@ -125,52 +136,27 @@ const DoctorDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Helper function to check if an appointment is for today (CRITICAL FOR LOCAL FILTERING)
-    const isToday = (appointmentTime) => {
-        // Normalizes times to midnight for reliable date comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); 
-
-        const apptDate = new Date(appointmentTime);
-        apptDate.setHours(0, 0, 0, 0); 
-        
-        return apptDate.getTime() === today.getTime();
-    };
-
-    // Function to fetch appointments from the backend (MODIFIED FOR LOCAL FILTERING)
+    // ✅ Fetch directly from /api/appointments/today
     const fetchAppointments = async () => {
         try {
-            // Call the general endpoint that fetches ALL of the doctor's appointments
-            // We do this because the specialized /today endpoint is crashing.
-            const response = await appointmentService.getTodayAppointmentsForDoctor(); 
-            const allAppointments = response.data; 
-
-            
-            setAppointments(todayAppointments); 
-            setError(null); 
+            const response = await appointmentService.getTodayAppointmentsForDoctor();
+            setAppointments(response || []);
+            setError(null);
         } catch (err) {
-            // This displays if the general API /my is failing.
-            setError("Failed to fetch appointments."); 
+            setError("Failed to fetch today's appointments.");
             console.error("Appointment fetch error:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Load appointments on component mount
     useEffect(() => {
         fetchAppointments();
     }, []);
 
-    // Function to update local state after a successful API status change
     const handleLocalStatusUpdate = (apptId, newStatus) => {
         setAppointments(prev => 
-            prev.map(a => {
-                if (a.id === apptId) {
-                    return { ...a, status: newStatus, hasRecord: false };
-                }
-                return a;
-            })
+            prev.map(a => (a.id === apptId ? { ...a, status: newStatus, hasRecord: false } : a))
         );
     };
 
@@ -181,16 +167,8 @@ const DoctorDashboard = () => {
     return (
         <Layout>
             <Box sx={{ p: 3 }}>
-                
-                {/* 1. Welcome Hero Section (STYLED CONTENT) */}
-                <Box sx={{ 
-                    mb: 5, 
-                    p: 4, 
-                    backgroundColor: '#e3f2fd',
-                    borderRadius: 2,
-                    boxShadow: 2
-                }}>
-                    {/* FIX: Welcome Message uses the correct 'name' property */}
+                {/* Welcome Section */}
+                <Box sx={{ mb: 5, p: 4, backgroundColor: '#e3f2fd', borderRadius: 2, boxShadow: 2 }}>
                     <Typography variant="h3" gutterBottom color="primary.dark">
                         Welcome back, Dr. {user?.name || 'Guest'}!
                     </Typography>
@@ -199,7 +177,7 @@ const DoctorDashboard = () => {
                     </Typography>
                 </Box>
 
-                {/* 2. Quick Action Modules */}
+                {/* Quick Actions */}
                 <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
                     Quick Actions
                 </Typography>
@@ -219,7 +197,7 @@ const DoctorDashboard = () => {
                     ))}
                 </Grid>
 
-                {/* 3. Schedule List Section */}
+                {/* Today's Appointments */}
                 <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
                     Today's Schedule
                 </Typography>
@@ -227,9 +205,10 @@ const DoctorDashboard = () => {
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                 
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                        <CircularProgress />
+                    </Box>
                 ) : (
-                    // Renders the Appointment Table OR the "No appointments" alert
                     <DoctorAppointmentTable 
                         appointments={appointments} 
                         role={role}
